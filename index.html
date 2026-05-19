@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>ASTRA CORE - Emergency Simulation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --bg-main: radial-gradient(circle at top, #11172f 0, #050816 45%, #02010a 100%);
+      --panel-bg: rgba(10, 16, 40, 0.9);
+      --accent-blue: #4fd5ff;
+      --accent-purple: #b38cff;
+      --accent-pink: #ff7ad9;
+      --text-main: #f5f7ff;
+      --text-sub: #c3c7ff;
+      --danger: #ff6b81;
+      --success: #7dffb3;
+      --border-soft: rgba(255, 255, 255, 0.08);
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.55);
+      --transition-fast: 0.18s ease-out;
+      --transition-med: 0.25s ease-out;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg-main);
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    /* ===== 導入画面 ===== */
+    #intro-screen {
+      width: 100%;
+      max-width: 900px;
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.4));
+      border-radius: 26px;
+      padding: 22px 20px 24px;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      position: relative;
+      overflow: hidden;
+    }
+    #intro-screen::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(79, 213, 255, 0.18) 0, transparent 55%),
+        radial-gradient(circle at 90% 0%, rgba(179, 140, 255, 0.18) 0, transparent 55%);
+      opacity: 0.9;
+      pointer-events: none;
+    }
+    .intro-inner { position: relative; z-index: 1; }
+    .intro-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .intro-logo {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 20%, #ffffff, #4fd5ff 40%, #050816 75%);
+      box-shadow: 0 0 22px rgba(79, 213, 255, 0.8);
+      position: relative;
+      flex-shrink: 0;
+    }
+    .intro-logo::after {
+      content: "";
+      position: absolute;
+      inset: 11px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.7);
+      border-top-color: transparent;
+      border-right-color: transparent;
+      transform: rotate(-25deg);
+    }
+    .intro-title-main {
+      font-size: 1.3rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent-blue);
+    }
+    .intro-title-sub { font-size: 0.85rem; color: var(--text-sub); }
+    .intro-story {
+      margin-top: 10px;
+      font-size: 0.95rem;
+      line-height: 1.8;
+      color: var(--text-sub);
+      background: rgba(5, 10, 40, 0.85);
+      border-radius: 18px;
+      padding: 16px 18px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .intro-story strong { color: var(--accent-purple); }
+    .intro-ann { color: #ff7a7a; font-weight: 600; }
+    .intro-footer {
+      margin-top: 16px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    /* ===== 共通ボタン ===== */
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 9px 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      color: #050816;
+      box-shadow: 0 10px 20px rgba(79, 213, 255, 0.4);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: var(--transition-med);
+      white-space: nowrap;
+    }
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 26px rgba(79, 213, 255, 0.55);
+      filter: brightness(1.05);
+    }
+    button:active {
+      transform: translateY(0);
+      box-shadow: 0 6px 14px rgba(79, 213, 255, 0.4);
+      filter: brightness(0.98);
+    }
+
+    .hidden { display: none; }
+
+    /* ===== 復旧プロトコル画面 ===== */
+    .app-frame {
+      width: 100%;
+      max-width: 980px;
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.4));
+      border-radius: 26px;
+      padding: 18px;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      position: relative;
+      overflow: hidden;
+    }
+    .app-frame::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(79, 213, 255, 0.18) 0, transparent 55%),
+        radial-gradient(circle at 90% 0%, rgba(179, 140, 255, 0.18) 0, transparent 55%);
+      opacity: 0.9;
+      pointer-events: none;
+    }
+    .app-inner {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.4fr);
+      gap: 18px;
+    }
+    @media (max-width: 720px) {
+      .app-inner { grid-template-columns: minmax(0, 1fr); }
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .logo {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 20%, #ffffff, #4fd5ff 40%, #050816 75%);
+      box-shadow: 0 0 18px rgba(79, 213, 255, 0.7);
+      position: relative;
+      flex-shrink: 0;
+    }
+    .logo::after {
+      content: "";
+      position: absolute;
+      inset: 9px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.7);
+      border-top-color: transparent;
+      border-right-color: transparent;
+      transform: rotate(-25deg);
+    }
+    .title-block { flex: 1; }
+    .title-main {
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent-blue);
+    }
+    .title-sub { font-size: 0.8rem; color: var(--text-sub); opacity: 0.9; }
+
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+      font-size: 0.8rem;
+      color: var(--text-sub);
+    }
+    .pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(5, 10, 40, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .pill-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-blue);
+      box-shadow: 0 0 8px rgba(79, 213, 255, 0.9);
+    }
+    .pill-dot.warn {
+      background: #ffb347;
+      box-shadow: 0 0 8px rgba(255, 179, 71, 0.9);
+    }
+    .pill-dot.ok {
+      background: var(--success);
+      box-shadow: 0 0 8px rgba(125, 255, 179, 0.9);
+    }
+
+    .stage-indicator {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .stage-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(5, 10, 40, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      color: var(--text-sub);
+      transition: var(--transition-fast);
+    }
+    .stage-dot.active {
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      color: #050816;
+      border-color: rgba(255, 255, 255, 0.8);
+      box-shadow: 0 0 12px rgba(79, 213, 255, 0.8);
+      transform: translateY(-1px);
+    }
+    .stage-dot.done {
+      background: linear-gradient(135deg, var(--success), #b7ffd9);
+      color: #05301a;
+      border-color: rgba(255, 255, 255, 0.9);
+    }
+
+    .panel-main {
+      background: var(--panel-bg);
+      border-radius: var(--radius-lg);
+      padding: 16px 16px 18px;
+      border: 1px solid var(--border-soft);
+      backdrop-filter: blur(16px);
+      position: relative;
+      overflow: hidden;
+    }
+    .panel-main::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 0 0, rgba(79, 213, 255, 0.12), transparent 55%);
+      opacity: 0.7;
+      pointer-events: none;
+    }
+    .panel-main-inner { position: relative; z-index: 1; }
+
+    .story {
+      font-size: 0.9rem;
+      color: var(--text-sub);
+      line-height: 1.7;
+      margin-bottom: 12px;
+    }
+    .story-strong { color: var(--accent-purple); font-weight: 600; }
+
+    .stage-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .stage-tag {
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(79, 213, 255, 0.12);
+      border: 1px solid rgba(79, 213, 255, 0.5);
+      color: var(--accent-blue);
+    }
+
+    .puzzle-text {
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+      line-height: 1.6;
+    }
+
+    .puzzle-box {
+      margin: 10px 0 12px;
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      background: rgba(5, 10, 40, 0.9);
+      border: 1px solid rgba(79, 213, 255, 0.35);
+      font-family: "Consolas", "SF Mono", ui-monospace, monospace;
+      font-size: 0.9rem;
+      color: var(--accent-blue);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .puzzle-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-sub);
+      margin-bottom: 4px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    @media (max-width: 480px) {
+      .input-row { flex-direction: column; }
+    }
+
+    input[type="text"], input[type="number"] {
+      flex: 1;
+      padding: 9px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(5, 10, 40, 0.9);
+      color: var(--text-main);
+      font-size: 0.9rem;
+      outline: none;
+      transition: var(--transition-fast);
+    }
+    input::placeholder { color: rgba(195, 199, 255, 0.6); }
+
+    .feedback {
+      font-size: 0.85rem;
+      margin-top: 4px;
+      min-height: 1.2em;
+    }
+    .feedback.ok { color: var(--success); }
+    .feedback.ng { color: var(--danger); }
+
+    .side-panel {
+      background: rgba(5, 10, 40, 0.9);
+      border-radius: var(--radius-lg);
+      padding: 14px 14px 16px;
+      border: 1px solid var(--border-soft);
+      backdrop-filter: blur(16px);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .side-section-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--text-sub);
+      opacity: 0.9;
+    }
+    .log-box {
+      background: rgba(10, 18, 55, 0.95);
+      border-radius: var(--radius-md);
+      padding: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 0.8rem;
+      color: var(--text-sub);
+      max-height: 190px;
+      overflow-y: auto;
+    }
+    .log-entry {
+      margin-bottom: 6px;
+      padding-bottom: 4px;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.06);
+    }
+    .log-entry:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    .log-tag {
+      font-size: 0.7rem;
+      color: var(--accent-blue);
+      margin-right: 4px;
+    }
+
+    .team-tip {
+      background: linear-gradient(135deg, rgba(79, 213, 255, 0.12), rgba(179, 140, 255, 0.12));
+      border-radius: var(--radius-md);
+      padding: 8px 10px;
+      border: 1px solid rgba(79, 213, 255, 0.35);
+      font-size: 0.8rem;
+      color: var(--text-main);
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+    .team-tip-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 20%, #ffffff, #ff7ad9 40%, #050816 75%);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+    }
+
+    /* エンディング */
+    .final-screen {
+      text-align: left;
+      padding: 10px 4px 4px;
+    }
+    #ending-text {
+      font-size: 0.9rem;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      color: var(--text-main);
+      min-height: 260px;
+    }
+    .core-orbit {
+      width: 140px;
+      height: 140px;
+      margin: 0 auto 10px;
+      border-radius: 50%;
+      border: 2px solid rgba(79, 213, 255, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: visible;
+    }
+    .core-orbit::before {
+      content: "";
+      position: absolute;
+      width: 190px;
+      height: 190px;
+      border-radius: 50%;
+      border: 1px dashed rgba(179, 140, 255, 0.5);
+      animation: orbit 10s linear infinite;
+      opacity: 0.7;
+    }
+    .core {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 20%, #ffffff, #4fd5ff 40%, #050816 80%);
+      box-shadow:
+        0 0 20px rgba(79, 213, 255, 0.9),
+        0 0 40px rgba(179, 140, 255, 0.7);
+      position: relative;
+    }
+    .core::after {
+      content: "";
+      position: absolute;
+      inset: 12px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.8);
+      border-top-color: transparent;
+      border-right-color: transparent;
+      animation: spin 4s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes orbit { to { transform: rotate(-360deg); } }
+  </style>
+</head>
+<body>
+
+  <!-- 導入画面 -->
+  <div id="intro-screen">
+    <div class="intro-inner">
+      <div class="intro-header">
+        <div class="intro-logo"></div>
+        <div>
+          <div class="intro-title-main">ASTRA CORE</div>
+          <div class="intro-title-sub">統合エネルギー制御システム </div>
+        </div>
+      </div>
+
+      <div class="intro-story">
+        ASTRA CORE は、研究施設全体の<br>
+        ・実験装置の制御<br>
+        ・エネルギー供給<br>
+        ・安全管理<br>
+        ・データ解析<br>
+        ・環境維持<br>
+        を統合して管理する、<br>
+        <strong>“頭脳”であり“心臓”のようなシステム</strong>である。<br><br>
+
+        しかし——<br><br>
+
+        <span class="intro-ann">《アナウンス》</span><br>
+        異常発生。異常発生。<br>
+        シミュレーションルームは自動ロックされました。<br><br>
+
+        <strong>《先輩技術者》</strong><br>
+        ……落ち着け。<br>
+        これは見学のはずだったが、どうやら異常事態のようだ。<br><br>
+        俺たちも閉じ込められた以上、<br>
+        <strong>ここにいる全員でシステム復旧を目指すしかない。</strong><br><br>
+
+        まずは復旧プロトコルの起動だ！
+      </div>
+
+      <div class="intro-footer">
+        <button onclick="startSimulation()">復旧プロトコルを開始する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 復旧プロトコル画面 -->
+  <div class="app-frame hidden" id="app-frame">
+    <div class="app-inner">
+      <div>
+        <div class="header">
+          <div class="logo"></div>
+          <div class="title-block">
+            <div class="title-main">ASTRA CORE</div>
+            <div class="title-sub">
+              統合エネルギー制御システム 再起動プロトコル
+            </div>
+          </div>
+        </div>
+
+        <div class="status-bar">
+          <div class="pill">
+            <span class="pill-dot warn" id="status-dot"></span>
+            <span id="status-text">CORE STATUS: EMERGENCY LOCKDOWN</span>
+          </div>
+          <div class="stage-indicator">
+            <div class="stage-dot active" id="stage-dot-1">1</div>
+            <div class="stage-dot" id="stage-dot-2">2</div>
+            <div class="stage-dot" id="stage-dot-3">3</div>
+            <div class="stage-dot" id="stage-dot-4">4</div>
+            <div class="stage-dot" id="stage-dot-5">5</div>
+          </div>
+        </div>
+
+        <div class="panel-main">
+          <div class="panel-main-inner" id="game-panel"></div>
+        </div>
+      </div>
+
+      <div class="side-panel">
+        <div>
+          <div class="side-section-title">MISSION LOG</div>
+          <div class="log-box" id="log-box">
+            <div class="log-entry">
+              <span class="log-tag">SYSTEM</span>
+              ASTRA CORE デモ運転中に予期せぬ異常を検知。シミュレーションルームは自動ロックされました。
+            </div>
+            <div class="log-entry">
+              <span class="log-tag">SYSTEM</span>
+              新人と先輩技術者は同じ部屋に閉じ込められ、システム復旧プロトコルを開始します。
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="side-section-title">TEAM TIP</div>
+          <div class="team-tip">
+            <div class="team-tip-icon">🤝</div>
+            <div>
+              <strong>困ったら、仲間と相談しよう💛</strong><br>
+              この部屋には、新人も先輩も同じように閉じ込められています。<br>
+              「これどう思う？」「こういう見方もあるよね？」と声に出すだけで、突破口が見えることがあります。<br>
+              わからないことを聞くことも、<strong>立派な技術</strong>です。
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="side-section-title">PROGRESS</div>
+          <div class="log-box" id="progress-box">
+            ・ステージ1：実験データ（数列）解析<br>
+            ・ステージ2：文字コード暗号ログ解析<br>
+            ・ステージ3：論理パズル（かくれんぼ）<br>
+            ・ステージ4：言葉の対応関係パズル<br>
+            ・ステージ5：コア再起動
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const panel = document.getElementById("game-panel");
+    const logBox = document.getElementById("log-box");
+    const statusDot = document.getElementById("status-dot");
+    const statusText = document.getElementById("status-text");
+    const stageDots = {
+      1: document.getElementById("stage-dot-1"),
+      2: document.getElementById("stage-dot-2"),
+      3: document.getElementById("stage-dot-3"),
+      4: document.getElementById("stage-dot-4"),
+      5: document.getElementById("stage-dot-5"),
+    };
+
+    let ans1 = null;
+    let ans2 = null;
+    let ans3 = null;
+    let ans4 = null;
+
+    function startSimulation() {
+      document.getElementById("intro-screen").classList.add("hidden");
+      document.getElementById("app-frame").classList.remove("hidden");
+      renderStage1();
+    }
+
+    function addLog(tag, text) {
+      const entry = document.createElement("div");
+      entry.className = "log-entry";
+      entry.innerHTML = `<span class="log-tag">${tag}</span>${text}`;
+      logBox.appendChild(entry);
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    function setStageIndicator(stage) {
+      Object.keys(stageDots).forEach((key) => {
+        const dot = stageDots[key];
+        dot.classList.remove("active");
+        if (Number(key) < stage) dot.classList.add("done");
+      });
+      stageDots[stage].classList.add("active");
+    }
+
+    function renderStage1() {
+      setStageIndicator(1);
+      statusDot.className = "pill-dot warn";
+      statusText.textContent = "CORE STATUS: RECOVERY PROTOCOL - STEP 1";
+
+      panel.innerHTML = `
+        <div class="story">
+        <span class="intro-ann">《アナウンス》</span><br>
+          『実験データの異常を検知しました。<br>
+          出力値のパターンを見抜いて、次に来る値を特定してください。』
+        </div>
+
+        <div class="stage-title">
+          ステージ1：実験データ解析
+          <span class="stage-tag">階乗パターン</span>
+        </div>
+
+        <div class="puzzle-text">
+          実験データログから、出力値の一部が抜き出されている。<br>
+          この数列の規則性を見抜き、次に来る値を特定せよ。
+        </div>
+
+        <div class="puzzle-label">EXPERIMENT DATA</div>
+        <div class="puzzle-box">
+          1, 2, 6, 24, 120, <span style="color: var(--accent-pink); font-weight: 600;">?</span>
+        </div>
+
+        <div class="puzzle-text">
+          ヒント：<span class="story-strong">1×1, 1×2, 1×2×3, …</span> のような「積」に注目。
+        </div>
+
+        <div class="input-row">
+          <input type="number" id="stage1-input" placeholder="次に来る数値を入力">
+          <button id="stage1-check-btn">送信</button>
+        </div>
+        <div class="feedback" id="stage1-feedback"></div>
+      `;
+
+      document.getElementById("stage1-check-btn").onclick = () => {
+        const val = document.getElementById("stage1-input").value.trim();
+        const fb = document.getElementById("stage1-feedback");
+
+        if (val === "720") {
+          fb.textContent = "正解。1×2×3×4×5×6 = 720。階乗パターンだ。";
+          fb.className = "feedback ok";
+          ans1 = 720;
+          addLog("STAGE1", `実験データ解析：1,2,6,24,120, <strong>${ans1}</strong>`);
+          setTimeout(renderStage2, 900);
+        } else {
+          fb.textContent = "まだ揺らぎがあります。1から順に掛け算してみましょう。";
+          fb.className = "feedback ng";
+        }
+      };
+    }
+
+    function renderStage2() {
+      setStageIndicator(2);
+      statusDot.className = "pill-dot warn";
+      statusText.textContent = "CORE STATUS: ENCODED LOG DETECTED";
+
+      panel.innerHTML = `
+        <div class="story">
+        <span class="intro-ann">《アナウンス》</span><br>
+          『実験データの修復に成功、コア内部のログにアクセスしました。<br>
+          <span class="story-strong">文字コード暗号</span>を解読してください。』
+        </div>
+
+        <div class="stage-title">
+          ステージ2：文字コード暗号解析
+          <span class="stage-tag">HEX → ASCII</span>
+        </div>
+
+        <div class="puzzle-text">
+          以下は、16進数で表現された文字列である。<br>
+          文字コードとして解釈し、英単語を復元せよ。
+        </div>
+
+        <div class="puzzle-label">ENCRYPTED LOG</div>
+        <div class="puzzle-box">
+          45 58 50 45 52 49 4D 45 4E 54
+        </div>
+
+        <div class="input-row">
+          <input type="text" id="stage2-input" placeholder="英単語を入力（例：EXAMPLE）">
+          <button id="stage2-check-btn">送信</button>
+        </div>
+        <div class="feedback" id="stage2-feedback"></div>
+      `;
+
+      document.getElementById("stage2-check-btn").onclick = () => {
+        const val = document.getElementById("stage2-input").value.trim().toUpperCase();
+        const fb = document.getElementById("stage2-feedback");
+
+        if (val === "EXPERIMENT") {
+          fb.textContent = "復号成功。HEX → ASCII で EXPERIMENT となる。";
+          fb.className = "feedback ok";
+          ans2 = "EXPERIMENT";
+          addLog("STAGE2", `暗号ログ復号：<strong>${ans2}</strong>`);
+          setTimeout(renderStage3, 900);
+        } else {
+          fb.textContent = "別の単語になっているようです。16進数→文字の対応を確認してみましょう。";
+          fb.className = "feedback ng";
+        }
+      };
+    }
+
+    function renderStage3() {
+      setStageIndicator(3);
+      statusDot.className = "pill-dot warn";
+      statusText.textContent = "CORE STATUS: LOGIC CHECK REQUIRED";
+
+      panel.innerHTML = `
+        <div class="story">
+            <span class="intro-ann">《アナウンス》</span><br>
+          『コアの安全プロトコルは、論理的な一貫性を確認するテストを要求しています。<br>
+          5人の証言がすべて正しいとき、状況を一意に特定してください。』
+        </div>
+
+        <div class="stage-title">
+          ステージ3：論理パズル
+          <span class="stage-tag">かくれんぼの証言</span>
+        </div>
+
+        <div class="puzzle-box">
+          A「私が見つかったのは3番目じゃないよ」<br>
+          B「僕はCより早く見つかったよ」<br>
+          C「僕が見つかったのは奇数番目だよ」<br>
+          D「Bが見つかったのは2番目じゃないよ」<br>
+          E「私は一番最後まで隠れてたよ」
+        </div>
+
+        <div class="input-row">
+          <input type="text" id="stage3-input" placeholder="最初に見つかった人（例：A）">
+          <button id="stage3-check-btn">送信</button>
+        </div>
+        <div class="feedback" id="stage3-feedback"></div>
+      `;
+
+      document.getElementById("stage3-check-btn").onclick = () => {
+        const val = document.getElementById("stage3-input").value.trim().toUpperCase();
+        const fb = document.getElementById("stage3-feedback");
+
+        if (val === "B") {
+          fb.textContent = "正解。B→1番目、C→3番目、E→5番目となる。";
+          fb.className = "feedback ok";
+          ans3 = "B";
+          addLog("STAGE3", `論理パズル：最初に見つかったのは <strong>${ans3}</strong>`);
+          setTimeout(renderStage4, 900);
+        } else {
+          fb.textContent = "条件をすべて満たす並びになっているか確認してみましょう。";
+          fb.className = "feedback ng";
+        }
+      };
+    }
+
+    function renderStage4() {
+      setStageIndicator(4);
+      statusDot.className = "pill-dot warn";
+      statusText.textContent = "CORE STATUS: SEMANTIC MAPPING TEST";
+
+      panel.innerHTML = `
+        <div class="story">
+        <span class="intro-ann">《アナウンス》</span><br>
+          『機械ではないことを証明する必要があります。<br>
+          似た読みを持つ言葉同士の対応を考え、パターンを完成させてください。』
+        </div>
+
+        <div class="stage-title">
+          ステージ4：言葉の対応パズル
+          <span class="stage-tag">読みと意味</span>
+        </div>
+
+        <div class="puzzle-box">
+          ジンジ = ヒトゴト<br>
+          ニンキ = ヒトケ<br>
+          サユ  = ？<br>
+          １ ブイヨン　２ トンコツ　３ パイタン
+        </div>
+
+        <div class="input-row">
+          <input type="number" id="stage4-input" placeholder="１〜３で入力">
+          <button id="stage4-check-btn">送信</button>
+        </div>
+        <div class="feedback" id="stage4-feedback"></div>
+      `;
+
+      document.getElementById("stage4-check-btn").onclick = () => {
+        const val = document.getElementById("stage4-input").value.trim();
+        const fb = document.getElementById("stage4-feedback");
+
+        if (val === "3") {
+          fb.textContent = "正解。サユ（白湯）→パイタン（白湯スープ）。";
+          fb.className = "feedback ok";
+          ans4 = "パイタン";
+          addLog("STAGE4", `言葉の対応：サユ → <strong>${ans4}</strong>`);
+          setTimeout(renderStage5, 900);
+        } else {
+          fb.textContent = "別の対応関係になっています。「白湯」を思い出してみましょう。";
+          fb.className = "feedback ng";
+        }
+      };
+    }
+
+    function renderStage5() {
+      setStageIndicator(5);
+      statusDot.className = "pill-dot ok";
+      statusText.textContent = "CORE STATUS: FULLY ONLINE";
+
+      panel.innerHTML = `
+        <div class="final-screen">
+          <div class="core-orbit">
+            <div class="core"></div>
+          </div>
+          <div id="ending-text"></div>
+        </div>
+      `;
+
+      const endingText = `
+
+
+プロトコル終了。ASTRA CORE、完全復旧。
+
+
+今日、君たちは初めての試練を乗り越えた。
+
+実験データ・暗号化ログを解析し、
+仲間と協力して最終コードを導き出した。
+
+困ったら相談し、
+わからなければ仲間と、
+力を合わせて突破する。
+
+その姿勢こそ、
+これからの未来をつくる仲間に必要な力だ。
+
+ようこそ。
+これからのミッションも、一緒に乗り越えていこう。
+
+仲間になってくれて、ありがとう。
+`;
+
+      typeText("ending-text", endingText, 18);
+      addLog("SYSTEM", "コア再起動成功。シミュレーション完了。");
+    }
+
+    function typeText(elementId, text, speed) {
+      const el = document.getElementById(elementId);
+      let i = 0;
+      function type() {
+        if (i < text.length) {
+          el.textContent += text.charAt(i);
+          i++;
+          setTimeout(type, speed);
+        }
+      }
+      type();
+    }
+  </script>
+</body>
+</html>
